@@ -183,8 +183,8 @@ def main():
     print(number_hosts)
 
     available_ips = listar_ips_rede(ip, subweb_mask)
-    #for available_ip in available_ips:
-        #print(f"{ip[0:12]}{available_ip}")
+    for available_ip in available_ips:
+        print(f"{ip[0:12]}{available_ip}")
 
     web_range = calcular_faixa_de_rede(ip)
     print(web_range)
