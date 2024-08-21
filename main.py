@@ -2,8 +2,13 @@ def validar_ip(ip):
     ## Verifica se IP é válido
     is_ip_valid = True
 
-    if len(ip) > 15:
+    if len(ip) > 15 or len(ip) < 1:
         is_ip_valid = False
+
+    for i in range(0, 15, 4):
+        if int(ip[i : i + 3]) > 255:
+            is_ip_valid = False
+            break
 
     for i in range(0, 15):
         if i != 0 and (i + 1) % 4 == 0:
@@ -23,7 +28,7 @@ def validar_ip(ip):
 def validar_mascara(mascara):
     is_submask_valid = True
 
-    if len(mascara) > 15:
+    if len(mascara) > 15 or len(mascara) < 1:
         is_submask_valid = False
 
     for i in range(0, 15):
@@ -57,11 +62,21 @@ def calcular_broadcast(ip, mascara):
     while not(int(ip[12:16]) > network_address and int(ip[12:16]) < broadcast_address):
         network_address += subweb_step
         broadcast_address += subweb_step
+
     return broadcast_address
+
+def calcular_endereço_rede(ip, mascara):
+    subweb_step = 256 - int(mascara[12:16])
+    network_address = 0
+    broadcast_address = subweb_step - 1
+    while not(int(ip[12:16]) > network_address and int(ip[12:16]) < broadcast_address):
+        network_address += subweb_step
+        broadcast_address += subweb_step
+        
+    return network_address
 
 
 def numero_de_hosts(mascara):
-
     subweb_binary = str(bin(int(mascara[12:16])))
     subweb_bits = 0
     for i in range(8):
@@ -74,39 +89,88 @@ def numero_de_hosts(mascara):
 
 
 def listar_ips_rede(ip, mascara):
-    subweb_step = 256 - int(mascara[12:16])
-    network_address = 0
-    broadcast_address = subweb_step - 1
-    available_ips = -2
+    broad = calcular_broadcast(ip, mascara)
+    net = calcular_endereço_rede(ip, mascara)
+    ips = []
 
-    for i in range(1, 255):
-        if not (i / network_address == 0 or i / broadcast_address == 0):
-            available_ips += 1
+    for i in range(net + 1, broad):
+        if i != int(ip[12:16]):
+            if i < 100:
+                ips.append(str(f"0{i}"))
+            else:
+                ips.append(str(i))
 
-    return available_ips
+    return ips
+
+
+def calcular_faixa_de_rede(ip):
+    web_range = ""
+    IPsArray = ip.split(".")
+    IPsArray = [int(e) for e in IPsArray]
+
+    if IPsArray[0] == 0:
+        web_range = "Rede privada"
+
+    elif IPsArray[0] == 10 or (IPsArray[0] == 172 and IPsArray[1] == 16) or (IPsArray[0] == 192 and IPsArray[1] == 168):
+        web_range = "Endereçamento privado"
+
+    elif IPsArray[0] == 127:
+        web_range = "Endereçamento de realimentação (loopback)"
+    
+    elif IPsArray[0] == 169 and IPsArray[1] == 254:
+        web_range = "Zeroconf/APIPA"
+
+    elif IPsArray[0] == 240 or (IPsArray[0] == 192 and IPsArray[1] == 0 and IPsArray[2] == 0):
+        if IPsArray[0] == 240:
+            web_range = "Reservado (Classe E)"
+        else:
+            web_range = "Reservado"
+
+    elif (IPsArray[0] == 192 and IPsArray[1] == 0 and IPsArray[2] == 2) or (IPsArray[0] == 198 and IPsArray[1] == 51 and IPsArray[2] == 100) or (IPsArray[0] == 203 and IPsArray[1] == 0 and IPsArray[2] == 113):
+        web_range = "Documentação e exemplos"
+
+    elif IPsArray[0] == 192 and IPsArray[1] == 88 and IPsArray[2] == 99:
+        web_range = "6to4 (Mecanismo de transição de endereços IPv4 em IPv6)"
+
+    elif IPsArray[0] == 198 and IPsArray[1] == 18:
+        web_range = "Equipamentos para teste de rede"
+
+    elif IPsArray[0] == 224:
+        web_range = "Multicast (Classe D)"
+
+    else:
+        web_range = "IP não especial"
+
+    return web_range
 
 
 def main():
     ip = ""
     subweb_mask = ""
-    number_hosts = 0
     available_ips = 0
 
+    print("Formato ex. 192.168.100.100")
+    ip = input("Digite seu endereço de IP: ")
     validacao = validar_ip(ip)
     while not validacao:
+        if not validacao:
+            print("IP is in wrong format\n")
+
         print("Formato ex. 192.168.100.100")
         ip = input("Digite seu endereço de IP: ")
         validacao = validar_ip(ip)
-        if not validacao:
-            print("IP is in wrong format")
 
+
+    print("\nFormato ex. 255.255.000.000")
+    subweb_mask = input("Digite sua máscara de rede: ")
     validacao = validar_mascara(subweb_mask)
     while not validacao: 
+        if not validacao:
+            print("Submask is in wrong format")
+
         print("\nFormato ex. 255.255.000.000")
         subweb_mask = input("Digite sua máscara de rede: ")
         validacao = validar_mascara(subweb_mask)
-        if not validacao:
-            print("Submask is in wrong format")
 
     
     web_address = calcular_rede(ip, subweb_mask)
@@ -119,7 +183,11 @@ def main():
     print(number_hosts)
 
     available_ips = listar_ips_rede(ip, subweb_mask)
+    #for available_ip in available_ips:
+        #print(f"{ip[0:12]}{available_ip}")
 
+    web_range = calcular_faixa_de_rede(ip)
+    print(web_range)
 
 if __name__ == "__main__":
     main()
