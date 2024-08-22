@@ -77,13 +77,19 @@ def calcular_endereço_rede(ip, mascara):
 
 
 def numero_de_hosts(mascara):
-    subweb_binary = str(bin(int(mascara[12:16])))
+    arr = mascara.split(".")
+    for i in arr:
+        bin(int(i))
+    subweb_binary = "".join(arr)
+    print(subweb_binary)
     subweb_bits = 0
-    for i in range(8):
-        if subweb_binary[i] == "1":
+    for i in range(len(subweb_binary)):
+        if subweb_binary[i] == "0":
             subweb_bits += 1
+        elif subweb_binary[i] == "1":
+            subweb_bits = 0
 
-    hosts_bits = 8 - subweb_bits
+    hosts_bits = 2 ** subweb_bits
 
     return hosts_bits
 
@@ -95,7 +101,9 @@ def listar_ips_rede(ip, mascara):
 
     for i in range(net + 1, broad):
         if i != int(ip[12:16]):
-            if i < 100:
+            if i < 10:
+                ips.append(str(f"00{i}"))
+            elif i < 100:
                 ips.append(str(f"0{i}"))
             else:
                 ips.append(str(i))
@@ -162,32 +170,33 @@ def main():
 
 
     print("\nFormato ex. 255.255.000.000")
-    subweb_mask = input("Digite sua máscara de rede: ")
+    subweb_mask = input("Digite sua máscara de rede: \n")
     validacao = validar_mascara(subweb_mask)
     while not validacao: 
         if not validacao:
             print("Submask is in wrong format")
 
         print("\nFormato ex. 255.255.000.000")
-        subweb_mask = input("Digite sua máscara de rede: ")
+        subweb_mask = input("Digite sua máscara de rede: \n")
         validacao = validar_mascara(subweb_mask)
 
     
     web_address = calcular_rede(ip, subweb_mask)
-    print(web_address)
+    print(f"Endereço de rede: {web_address}")
 
     broadcast_address = calcular_broadcast(ip, subweb_mask)
-    print(broadcast_address)
+    print(f"Endereço de broadcast: {broadcast_address}")
 
     number_hosts = numero_de_hosts(subweb_mask)
-    print(number_hosts)
+    print(f"Numero de hosts: {number_hosts}")
 
     available_ips = listar_ips_rede(ip, subweb_mask)
-    for available_ip in available_ips:
-        print(f"{ip[0:12]}{available_ip}")
+    print("IPs válidos:")
+    #for available_ip in available_ips:
+    #    print(f"    {ip[0:12]}{available_ip}")
 
     web_range = calcular_faixa_de_rede(ip)
-    print(web_range)
+    print(f"Faixa de rede: {web_range}")
 
 if __name__ == "__main__":
     main()
