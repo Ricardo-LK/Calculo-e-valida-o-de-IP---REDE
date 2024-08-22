@@ -59,7 +59,7 @@ def calcular_broadcast(ip, mascara):
     subweb_step = 256 - int(mascara[12:16])
     network_address = 0
     broadcast_address = subweb_step - 1
-    while not(int(ip[12:16]) > network_address and int(ip[12:16]) < broadcast_address):
+    while not(int(ip[12:16]) >= network_address and int(ip[12:16]) < broadcast_address):
         network_address += subweb_step
         broadcast_address += subweb_step
 
@@ -69,7 +69,7 @@ def calcular_endereço_rede(ip, mascara):
     subweb_step = 256 - int(mascara[12:16])
     network_address = 0
     broadcast_address = subweb_step - 1
-    while not(int(ip[12:16]) > network_address and int(ip[12:16]) < broadcast_address):
+    while not(int(ip[12:16]) >= network_address and int(ip[12:16]) < broadcast_address):
         network_address += subweb_step
         broadcast_address += subweb_step
         
@@ -78,8 +78,9 @@ def calcular_endereço_rede(ip, mascara):
 
 def numero_de_hosts(mascara):
     arr = mascara.split(".")
-    for i in arr:
-        bin(int(i))
+    for i in range(len(arr)):
+        print(str(bin(int(i))))
+        arr[i] = bin(int(arr[i]))
     subweb_binary = "".join(arr)
     print(subweb_binary)
     subweb_bits = 0
@@ -88,8 +89,10 @@ def numero_de_hosts(mascara):
             subweb_bits += 1
         elif subweb_binary[i] == "1":
             subweb_bits = 0
+        else:
+            subweb_bits -= 2
 
-    hosts_bits = 2 ** subweb_bits
+    hosts_bits = 2 ** (2 ** subweb_bits)
 
     return hosts_bits
 
