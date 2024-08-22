@@ -48,20 +48,31 @@ def validar_mascara(mascara):
 
 def calcular_rede(ip, mascara):
     binary_ip = "".join([format(int(sect), "08b") for sect in ip.split(".")])
-    binary_submask = "".join([format(int(sect), "08b") for sect in mascara.split(".")])
+    binary_webmask = "".join([format(int(sect), "08b") for sect in mascara.split(".")])
 
-    web_address = "".join(str(int(binary_ip[i]) & int(binary_submask[i])) for i in range(32))
+    web_address = "".join(str(int(binary_ip[i]) & int(binary_webmask[i])) for i in range(32))
 
     return web_address
 
 
 def calcular_broadcast(ip, mascara):
-    subweb_step = 256 - int(mascara[12:16])
-    network_address = 0
-    broadcast_address = subweb_step - 1
-    while not(int(ip[12:16]) >= network_address and int(ip[12:16]) < broadcast_address):
-        network_address += subweb_step
-        broadcast_address += subweb_step
+    broadcast_address = ""
+
+    binary_web_address = calcular_rede(ip, mascara)
+    print(binary_web_address)
+
+    binary_webmask = "".join([format(int(sect), "08b") for sect in mascara.split(".")])
+    inverted_webmask_arr = ""
+
+    for e in binary_webmask:
+        if e == "1":
+            inverted_webmask_arr += "0"
+        else:
+            inverted_webmask_arr += "1"
+
+    for i in range(32):
+        bit_temp = int(binary_web_address[i]) | int(inverted_webmask_arr[i])
+        broadcast_address += str(bit_temp)
 
     return broadcast_address
 
@@ -79,39 +90,33 @@ def calcular_endereço_rede(ip, mascara):
 def numero_de_hosts(mascara):
     arr = mascara.split(".")
     for i in range(len(arr)):
-        print(str(bin(int(i))))
-        arr[i] = bin(int(arr[i]))
-    subweb_binary = "".join(arr)
-    print(subweb_binary)
-    subweb_bits = 0
-    for i in range(len(subweb_binary)):
-        if subweb_binary[i] == "0":
-            subweb_bits += 1
-        elif subweb_binary[i] == "1":
-            subweb_bits = 0
-        else:
-            subweb_bits -= 2
+        arr[i] = str(format(int(arr[i]), '08b'))
 
-    hosts_bits = 2 ** (2 ** subweb_bits)
+    subnet_binary = "".join(arr)
+    subnet_bits = 0
+    for i in range(len(subnet_binary)):
+        if subnet_binary[i] == "0":
+            subnet_bits += 1
+
+    hosts_bits = 2 ** subnet_bits
 
     return hosts_bits
 
 
 def listar_ips_rede(ip, mascara):
-    broad = calcular_broadcast(ip, mascara)
-    net = calcular_endereço_rede(ip, mascara)
-    ips = []
-
-    for i in range(net + 1, broad):
-        if i != int(ip[12:16]):
-            if i < 10:
-                ips.append(str(f"00{i}"))
-            elif i < 100:
-                ips.append(str(f"0{i}"))
-            else:
-                ips.append(str(i))
-
-    return ips
+    rede = calcular_rede(ip, mascara)
+    broadcast = calcular_broadcast(ip, mascara)
+    
+    rede_int = sum([int(sect) << (8 * i) for i, sect in enumerate(rede.split(".")[::-1])])
+    broadcast_int = sum([int(sect) << (8 * i) for i, sect in enumerate(broadcast.split(".")[::-1])])
+    
+    available_IPs = []
+    
+    for ip_int in range(rede_int + 1, broadcast_int):
+        sects = [str((ip_int >> (8 * i)) & 0xFF) for i in range(4)][::-1]
+        available_IPs.append(".".join(sects))
+    
+    return available_IPs
 
 
 def calcular_faixa_de_rede(ip):
@@ -195,8 +200,8 @@ def main():
 
     available_ips = listar_ips_rede(ip, subweb_mask)
     print("IPs válidos:")
-    #for available_ip in available_ips:
-    #    print(f"    {ip[0:12]}{available_ip}")
+    for available_ip in available_ips:
+        print(f"    {available_ip}")
 
     web_range = calcular_faixa_de_rede(ip)
     print(f"Faixa de rede: {web_range}")
